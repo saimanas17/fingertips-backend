@@ -22,7 +22,7 @@ pipeline {
                 script {
                     def serviceExists = sh(script: "docker service ls --filter name=${SERVICE_NAME} | wc -l", returnStdout: true).trim()
                     if (serviceExists.toInteger() > 1) {
-                        // Service already exists, update it
+                        // Service already exists, update it to new code
                         sh "docker service update --image ${ECR_REPO}:fingertips-backend-${BUILD_NUMBER} ${SERVICE_NAME}"
                     } else {
                         // Service doesn't exist, create it
