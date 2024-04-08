@@ -15,7 +15,7 @@ pipeline {
             steps {
                 sh "docker login -u AWS -p \$(aws ecr get-login-password --region us-east-1) 058264264060.dkr.ecr.us-east-1.amazonaws.com/fingertips-backend"
                 sh "docker push 058264264060.dkr.ecr.us-east-1.amazonaws.com/fingertips-backend:fingertips-backend-${BUILD_NUMBER}"
-                sh "docker rmi 058264264060.dkr.ecr.us-east-1.amazonaws.com/fingertips-backend:fingertips-backend-${BUILD_NUMBER}"
+                
             }
         }       
         stage("Docker Swarm Deployment") {
