@@ -286,7 +286,7 @@ const editProfessional = async (req, res) => {
 
       res.status(200).json({
         message: "Professional details updated successfully",
-        customer,
+        professional,
       });
     });
     // Save the updated professional
