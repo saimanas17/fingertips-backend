@@ -47,8 +47,66 @@ const sendResetEmail = (userEmail, token, res) => {
       from: "fingertips.root@gmail.com",
       to: userEmail,
       subject: "Password reset link",
-      html: `<h1> Password Reset <h1>
-          <p>Please click on the following link to reset your password: <a>http://selfserviceportal-1253583212.us-east-1.elb.amazonaws.com:3000/user/resetpassword/${token}</a> </p>`,
+      html: `
+        <html>
+            <head>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        margin: 0;
+                        padding: 0;
+                        background-color: #f4f4f4;
+                    }
+                    .container {
+                        max-width: 600px;
+                        margin: 0 auto;
+                        padding: 20px;
+                        background-color: #ffffff;
+                        border-radius: 8px;
+                        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                    }
+                    .header {
+                        text-align: center;
+                        margin-bottom: 20px;
+                    }
+                    .title {
+                        color: #333333;
+                        font-size: 24px;
+                        margin-bottom: 10px;
+                    }
+                    .content {
+                        color: #666666;
+                        font-size: 16px;
+                    }
+                    .link {
+                        color: #007bff;
+                        text-decoration: none;
+                    }
+                    .footer {
+                        text-align: center;
+                        margin-top: 20px;
+                        color: #999999;
+                        font-size: 14px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1 class="title">Password Reset</h1>
+                    </div>
+                    <div class="content">
+                        <p>Please click on the following link to reset your password:</p>
+                        <p><a href="http://fingertips-201005000.us-east-1.elb.amazonaws.com/user/resetpassword/${token}" class="link">Reset Password</a></p>
+                    </div>
+                    <div class="footer">
+                        <p>If you didn't request a password reset, please ignore this email.</p>
+                        <p>This email was sent automatically. Please do not reply to it.</p>
+                    </div>
+                </div>
+            </body>
+        </html>
+    `,
     },
     (err, info) => {
       if (err) {
@@ -128,9 +186,63 @@ const authorizePro = async (req, res) => {
         from: "fingertips.root@.com",
         to: professional.email,
         subject: "Application Approved",
-        html: `<h1> Application Approved <h1>
-                <p>Application Approved</a> </p>`,
+        html: `
+        <html>
+            <head>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        margin: 0;
+                        padding: 0;
+                        background-color: #f4f4f4;
+                    }
+                    .container {
+                        max-width: 600px;
+                        margin: 0 auto;
+                        padding: 20px;
+                        background-color: #ffffff;
+                        border-radius: 8px;
+                        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                    }
+                    .header {
+                        text-align: center;
+                        margin-bottom: 20px;
+                    }
+                    .title {
+                        color: #333333;
+                        font-size: 24px;
+                        margin-bottom: 10px;
+                    }
+                    .content {
+                        color: #666666;
+                        font-size: 16px;
+                    }
+                    .footer {
+                        text-align: center;
+                        margin-top: 20px;
+                        color: #999999;
+                        font-size: 14px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1 class="title">Application Approved</h1>
+                    </div>
+                    <div class="content">
+                        <p>Your application has been approved. You'll now be able to login to the platform.</p>
+                    </div>
+                    <div class="footer">
+                        <p>If you have any questions, feel free to contact us.</p>
+                        <p>This email was sent automatically. Please do not reply to it.</p>
+                    </div>
+                </div>
+            </body>
+        </html>
+    `,
       },
+
       (err, info) => {
         if (err) {
           console.log(err);
@@ -162,16 +274,21 @@ const authenticate = async (req, res) => {
         professional.password
       );
       if (isPasswordValid) {
-        // If password is valid, generate JWT token
-        const token = jwt.sign(
-          {
-            id: professional._id,
-            email: professional.email,
-            userType: "professional",
-          },
-          "ethan_hunt"
-        );
-        return res.json({ token });
+        // If password is valid, check if professional is authorized
+        if (professional.isAuth) {
+          // If professional is authorized, generate JWT token
+          const token = jwt.sign(
+            {
+              id: professional._id,
+              email: professional.email,
+              userType: "professional",
+            },
+            "ethan_hunt"
+          );
+          return res.json({ token });
+        } else {
+          return res.status(401).json({ error: "Invalid credentials" });
+        }
       }
     }
 
@@ -182,7 +299,7 @@ const authenticate = async (req, res) => {
       // If customer is found, verify password
       const isPasswordValid = await bcrypt.compare(password, customer.password);
       if (isPasswordValid) {
-        // If password is valid, generate JWT token
+        // If password is valid, generate JWT token for customer
         const token = jwt.sign(
           { id: customer._id, email: customer.email, userType: "customer" },
           "ethan_hunt"

@@ -38,6 +38,7 @@ const professionalSchema = new mongoose.Schema(
       state: String,
       zip: String,
     },
+
     isAuth: {
       type: Boolean,
       default: false,
@@ -48,6 +49,10 @@ const professionalSchema = new mongoose.Schema(
     },
     resetlink: { type: String, default: "" },
     image: { type: String },
+    avgrating: {
+      type: Number,
+      default: 0,
+    },
     jobs: [
       {
         uniqueid: { type: String, default: "" },

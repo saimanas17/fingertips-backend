@@ -56,18 +56,15 @@ const customerSchema = new mongoose.Schema(
           type: String,
           enum: ["pending", "completed", "in_progress", "canceled"],
         },
+        jobType: { type: String },
         professional: {
           name: String,
           phone: String,
           email: String,
         },
         feedback: {
-          text: String,
-          rating: {
-            type: Number,
-            min: 0,
-            max: 5,
-          },
+          text: { type: String, default: "" },
+          rating: { type: Number, min: 0, max: 5, default: null },
         },
       },
     ],

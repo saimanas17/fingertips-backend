@@ -5,19 +5,126 @@ const Service = require("../model/service");
 const nodeMailer = require("../config/nodemailer");
 const multer = require("multer");
 const path = require("path");
+
 const services = async (req, res) => {
   try {
     const customerEmail = req.params.customeremail;
 
     // Find all services where the customerEmail matches
     const services = await Service.find({ customerEmail });
+    const results = [];
+    for (const service of services) {
+      // Extract unique ID
+      const uniqueId = service.uniqueid;
 
-    res.json(services); // Return the found services
+      // Find professional with that unique ID
+      const professional = await Professional.findOne({
+        "jobs.uniqueid": uniqueId,
+      });
+      const client = await Customer.findOne({
+        "purchased_services.uniqueid": uniqueId,
+      });
+
+      if (client) {
+        results.push({
+          _id: service._id,
+          uniqueId: uniqueId,
+          location: service.location,
+          job_date: service.jobDate,
+          deadline: service.deadline,
+          status: service.status,
+          payment: service.payment,
+          job: professional.profession,
+          professional_name:
+            professional.firstname + " " + professional.lastname,
+          professional_phone: professional.phonenum,
+          professional_email: professional.email,
+          feedback_from_cust_to_pro: service.customerFeedback.text,
+          client_rating_to_pro: service.customerFeedback.rating,
+          feedback_from_pro_to_cust: service.professionalFeedback.text,
+          pro_rating_to_cust: service.professionalFeedback.rating,
+          notes: service.notes.map((note) => ({
+            text: note.text,
+            author: note.author,
+          })),
+        });
+      }
+    }
+
+    // Define sorting order based on status
+    const statusOrder = ["pending", "in_progress", "completed", "cancelled"];
+
+    // Sort results based on status
+    results.sort(
+      (a, b) => statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status)
+    );
+
+    res.json(results); // Return the found services
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+const getservicebyid = async (req, res) => {
+  try {
+    const customerEmail = req.params.customeremail;
+    const serviceidtosearch = req.params.serviceid;
+    // Find all services where the customerEmail matches
+    const services = await Service.find({ customerEmail });
+    const results = [];
+    for (const service of services) {
+      // Extract unique ID
+      const uniqueId = service.uniqueid;
+
+      // Find professional with that unique ID
+      const professional = await Professional.findOne({
+        "jobs.uniqueid": uniqueId,
+      });
+      const client = await Customer.findOne({
+        "purchased_services.uniqueid": uniqueId,
+      });
+
+      if (client) {
+        results.push({
+          _id: service._id,
+          uniqueId: uniqueId,
+          location: service.location,
+          job_date: service.jobDate,
+          deadline: service.deadline,
+          status: service.status,
+          payment: service.payment,
+          job: professional.profession,
+          professional_name:
+            professional.firstname + " " + professional.lastname,
+          professional_phone: professional.phonenum,
+          professional_email: professional.email,
+          feedback_from_cust_to_pro: service.customerFeedback.text,
+          client_rating_to_pro: service.customerFeedback.rating,
+          feedback_from_pro_to_cust: service.professionalFeedback.text,
+          pro_rating_to_cust: service.professionalFeedback.rating,
+          notes: service.notes.map((note) => ({
+            text: note.text,
+            author: note.author,
+          })),
+        });
+      }
+    }
+
+    const serviceById = results.find(
+      (service) => service.uniqueId === serviceidtosearch
+    );
+
+    if (!serviceById) {
+      return res.status(404).json({ error: "Service not found" });
+    }
+
+    res.json(serviceById);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 const createUser = async (req, res) => {
   try {
     const {
@@ -89,10 +196,67 @@ const createUser = async (req, res) => {
       {
         from: "fingertips.root@.com",
         to: newCustomer.email,
-        subject: "Application Approved",
-        html: `<h1> Application Approved <h1>
-                <p>Application Approved</a> </p>`,
+        subject: "Welcome to Fingertips!",
+        html: `
+        <html>
+            <head>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        margin: 0;
+                        padding: 0;
+                        background-color: #f4f4f4;
+                    }
+                    .container {
+                        max-width: 600px;
+                        margin: 0 auto;
+                        padding: 20px;
+                        background-color: #ffffff;
+                        border-radius: 8px;
+                        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                    }
+                    .header {
+                        text-align: center;
+                        margin-bottom: 20px;
+                    }
+                    .title {
+                        color: #333333;
+                        font-size: 24px;
+                        margin-bottom: 10px;
+                    }
+                    .content {
+                        color: #666666;
+                        font-size: 16px;
+                    }
+                    .footer {
+                        text-align: center;
+                        margin-top: 20px;
+                        color: #999999;
+                        font-size: 14px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1 class="title">Welcome to Fingertips!</h1>
+                    </div>
+                    <div class="content">
+                        <p>Dear ${newCustomer.firstname},</p>
+                        <p>Thank you for registering with Fingertips. We are excited to have you on board!</p>
+                        <p>You can now log in to your account using the credentials you provided during registration.</p>
+                        <p>We hope you have a great experience with our platform.</p>
+                    </div>
+                    <div class="footer">
+                        <p>If you have any questions, feel free to contact us.</p>
+                        <p>This email was sent automatically. Please do not reply to it.</p>
+                    </div>
+                </div>
+            </body>
+        </html>
+    `,
       },
+
       (err, info) => {
         if (err) {
           console.log(err);
@@ -116,56 +280,94 @@ const purchaseService = async (req, res) => {
     const {
       customerEmail,
       professionalEmail,
+      jobType,
       description,
       location,
       jobDate,
       deadline,
       payment,
       status,
-      notes,
     } = req.body;
+    const parsedJobDate = new Date(jobDate);
+    const parsedDeadline = new Date(deadline);
+
+    let availableProfessional;
+
+    if (!professionalEmail || professionalEmail === "notgiven@gmail.com") {
+      // If no professionalEmail provided, find an available professional with the same jobType
+      availableProfessional = await Professional.findOne({
+        profession: jobType,
+        isAuth: true, // Consider only professionals with isAuth set to true
+        "jobs.job_date": { $not: { $lte: jobDate }, $not: { $gte: deadline } },
+      });
+
+      if (!availableProfessional) {
+        return res
+          .status(404)
+          .json({ error: "No available professionals for this job type" });
+      }
+    } else {
+      // Find the professional based on the professionalEmail
+      const professional = await Professional.findOne({
+        email: professionalEmail,
+        isAuth: true, // Consider only professionals with isAuth set to true
+      });
+
+      if (!professional) {
+        return res.status(404).json({ error: "Professional not found" });
+      }
+
+      // Check professional's availability
+      for (const job of professional.jobs) {
+        const jobStartDate = new Date(job.job_date);
+        const jobEndDate = new Date(job.deadline);
+        if (
+          (parsedJobDate >= jobStartDate && parsedJobDate <= jobEndDate) ||
+          (parsedDeadline >= jobStartDate && parsedDeadline <= jobEndDate) ||
+          (jobStartDate >= parsedJobDate && jobEndDate <= parsedDeadline)
+        ) {
+          return res.status(400).json({
+            error: "Professional is not available during this time",
+          });
+        }
+      }
+
+      availableProfessional = professional;
+    }
+
+    // Create a new service object
+
     const uniqueString =
       Math.random().toString(36).substring(2) + Date.now().toString(36);
 
-    // Create a new service object
     const newService = new Service({
       customerEmail,
-      professionalEmail,
+      professionalEmail: availableProfessional.email,
       description,
+      jobType,
       location,
       jobDate,
       deadline,
       payment,
       status,
-      notes,
       uniqueid: uniqueString,
+      notes: [{ text: "Your appointment is booked!!", author: "admin" }],
     });
 
     // Save the service to the database
     const savedService = await newService.save();
 
-    // Find the professional based on the professionalEmail
-    const professional = await Professional.findOne({
-      email: professionalEmail,
-    });
-
-    if (!professional) {
-      return res.status(404).json({ error: "Professional not found" });
-    }
-
-    // Find the client based on the customerEmail
-    const client = await Customer.findOne({ email: customerEmail });
-    const pro = await Professional.findOne({ email: professionalEmail });
     // Extract client's name and phone number
+    const client = await Customer.findOne({ email: customerEmail });
     const clientName = client ? client.firstname + " " + client.lastname : "";
     const clientPhone = client ? client.phonenum : "";
 
-    const proName = pro ? pro.firstname + " " + pro.lastname : "";
-    const proPhone = pro ? pro.phonenum : "";
-    //console.log(client.name + " " + client.phone);
-    // Push the newly created service to the professional's jobs array
+    const proName =
+      availableProfessional.firstname + " " + availableProfessional.lastname;
+    const proPhone = availableProfessional.phonenum;
 
-    professional.jobs.push({
+    // Push the newly created service to the professional's jobs array
+    availableProfessional.jobs.push({
       description,
       location,
       job_date: jobDate,
@@ -180,23 +382,25 @@ const purchaseService = async (req, res) => {
       uniqueid: uniqueString,
     });
 
+    // Push the newly created service to the client's purchased_services array
     client.purchased_services.push({
       description,
       location,
       job_date: jobDate,
+      jobType,
       deadline,
       status,
       payment,
       professional: {
         name: proName,
         phone: proPhone,
-        email: professionalEmail,
+        email: availableProfessional.email,
       },
       uniqueid: uniqueString,
     });
 
-    // Save the updated professional document
-    await professional.save();
+    // Save the updated professional document and the client document
+    await availableProfessional.save();
     await client.save();
 
     res.status(201).json(savedService); // Return the newly created service
@@ -273,6 +477,13 @@ const giveFeedbackfromcustomertoprofessional = async (req, res) => {
       return res.status(404).json({ error: "Service not found" });
     }
 
+    // Check if the service status is "completed"
+    if (service.status !== "completed") {
+      return res
+        .status(400)
+        .json({ error: "Feedback can only be given for completed services" });
+    }
+
     const professionalEmail = service.professionalEmail;
 
     // Update the feedback in the service document
@@ -292,12 +503,26 @@ const giveFeedbackfromcustomertoprofessional = async (req, res) => {
     const uiq = service.uniqueid;
     // Find the index of the service in the professional's jobs array
     professional.jobs.forEach((job, index) => {
-      // Check if client email matches cEmail
+      // Check if unique ID matches uiq
       if (job.uniqueid === uiq) {
         // Update feedback for the matching job
         professional.jobs[index].feedback = { text, rating };
       }
     });
+
+    await professional.save();
+    let totalRating = 0;
+    let numRatings = 0;
+    for (const job of professional.jobs) {
+      if (job.feedback && job.feedback.rating !== undefined) {
+        totalRating += job.feedback.rating;
+
+        numRatings++;
+      }
+    }
+    console.log(totalRating);
+    console.log(numRatings);
+    professional.avgrating = numRatings > 0 ? totalRating / numRatings : null;
 
     await professional.save();
 
@@ -343,7 +568,13 @@ const editCustomer = async (req, res) => {
     if (firstname) customer.firstname = firstname;
     if (lastname) customer.lastname = lastname;
     if (password) customer.password = password;
-    if (address) customer.address = address;
+    if (address) {
+      if (address.line1) customer.address.line1 = address.line1;
+      if (address.line2) customer.address.line2 = address.line2;
+      if (address.city) customer.address.city = address.city;
+      if (address.state) customer.address.state = address.state;
+      if (address.zip) customer.address.zip = address.zip;
+    }
     if (phonenum) customer.phonenum = phonenum;
 
     // Handle image upload if provided in the request
@@ -397,4 +628,5 @@ module.exports = {
   giveFeedbackfromcustomertoprofessional,
   editCustomer,
   getCustomerByEmail,
+  getservicebyid,
 };

@@ -10,6 +10,10 @@ const serviceSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    jobType: {
+      type: String,
+      required: true,
+    },
     description: {
       type: String,
       required: true,
@@ -38,9 +42,10 @@ const serviceSchema = new mongoose.Schema(
     },
     notes: [
       {
-        text: String,
+        text: { type: String, default: "Your appointment is booked!!" },
         author: {
           type: String,
+          default: "admin",
         },
       },
     ],
