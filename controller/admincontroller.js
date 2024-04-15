@@ -7,6 +7,17 @@ const nodeMailer = require("../config/nodemailer");
 const signToken = (userId, userType) => {
   return jwt.sign({ userId, userType }, "ethan_hunt", { expiresIn: "1h" });
 };
+const unauthusers = async (req, res) => {
+  try {
+    // Find all professionals
+    const professionals = await Professional.find({ isAuth: false });
+
+    res.status(200).json({ professionals });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 const forgetPassword = async (req, res) => {
   const userEmail = req.body.email;
 
@@ -183,7 +194,7 @@ const authorizePro = async (req, res) => {
     await professional.save();
     nodeMailer.transporter.sendMail(
       {
-        from: "fingertips.root@.com",
+        from: "fingertips.root@gmail.com",
         to: professional.email,
         subject: "Application Approved",
         html: `
@@ -264,7 +275,16 @@ const authorizePro = async (req, res) => {
 const authenticate = async (req, res) => {
   try {
     const { email, password } = req.body;
-
+    if (email === "admin@fingertips.com" && password === "Admin@123") {
+      const token = jwt.sign(
+        {
+          email: "admin@fingertips.com",
+          userType: "admin",
+        },
+        "ethan_hunt"
+      );
+      return res.json({ token });
+    }
     // Search for professional with provided email
     const professional = await Professional.findOne({ email });
     if (professional) {
@@ -321,4 +341,5 @@ module.exports = {
   authenticate,
   forgetPassword,
   resetPassword,
+  unauthusers,
 };

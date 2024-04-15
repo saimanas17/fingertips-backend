@@ -194,7 +194,7 @@ const createUser = async (req, res) => {
     await newCustomer.save();
     nodeMailer.transporter.sendMail(
       {
-        from: "fingertips.root@.com",
+        from: "fingertips.root@gmail.com",
         to: newCustomer.email,
         subject: "Welcome to Fingertips!",
         html: `

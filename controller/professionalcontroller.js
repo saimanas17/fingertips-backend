@@ -210,7 +210,7 @@ const createUser = async (req, res) => {
     await newUser.save();
     nodeMailer.transporter.sendMail(
       {
-        from: "fingertips.root@.com",
+        from: "fingertips.root@gmail.com",
         to: newUser.email,
         subject: "Your Registration is Pending Approval",
         html: `
