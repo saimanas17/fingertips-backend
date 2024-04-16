@@ -190,7 +190,7 @@ const createUser = async (req, res) => {
       purchased_services,
     });
 
-    // Save the customer to the database
+    
     await newCustomer.save();
     nodeMailer.transporter.sendMail(
       {
