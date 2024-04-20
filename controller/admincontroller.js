@@ -108,7 +108,7 @@ const sendResetEmail = (userEmail, token, res) => {
                     </div>
                     <div class="content">
                         <p>Please click on the following link to reset your password:</p>
-                        <p><a href="http://fingertips-201005000.us-east-1.elb.amazonaws.com/user/resetpassword/${token}" class="link">Reset Password</a></p>
+                        <p><a href="http://fingertips-201005000.us-east-1.elb.amazonaws.com/resetpassword/${token}" class="link">Reset Password</a></p>
                     </div>
                     <div class="footer">
                         <p>If you didn't request a password reset, please ignore this email.</p>
